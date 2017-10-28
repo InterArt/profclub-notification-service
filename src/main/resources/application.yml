@@ -1,3 +1,10 @@
+spring:
+  profiles: default
+  data:
+    mongodb:
+      host: localhost
+      port: 32768
+      database: apps
 rabbitmq:
   image: rabbitmq:management
   ports:

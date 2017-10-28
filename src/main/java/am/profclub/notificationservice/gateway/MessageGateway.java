@@ -1,10 +1,10 @@
 package am.profclub.notificationservice.gateway;
 
 import am.profclub.notificationservice.common.Event;
-import org.springframework.integration.annotation.Gateway;
+import org.springframework.integration.annotation.MessagingGateway;
 
+@MessagingGateway(defaultRequestChannel = "eventChannel")
 public interface MessageGateway {
 
-	@Gateway(requestChannel="eventChannel")
-	public void process(Event event);
+	void process(Event event);
 }
