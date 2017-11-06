@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <rabbit:connection-factory id="connectionFactory"
+                               host="192.168.99.100"
+                               port="5672"
+                               username="peirabbitmquser"
+                               password="peirabbitmqpswd" />
+
+    <rabbit:admin connection-factory="connectionFactory" />
+
+    <rabbit:template id="amqpTemplate"
+                     connection-factory="connectionFactory"
+                     exchange="si.test.exchange"
+                     routing-key="si.test.binding"
+                     queue="si.test.queue" />
+
+    <rabbit:queue name="si.test.queue" durable="true"/>
+
+    <rabbit:direct-exchange name="si.test.exchange">
+        <rabbit:bindings>
+            <rabbit:binding queue="si.test.queue" key="si.test.binding" />
+        </rabbit:bindings>
+    </rabbit:direct-exchange>
+</beans>

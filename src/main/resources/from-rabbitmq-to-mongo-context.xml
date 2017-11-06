@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:int-amqp="http://www.springframework.org/schema/integration/amqp"
+       xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+       xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+       xmlns:int-mongodb="http://www.springframework.org/schema/integration/mongodb"
+       xsi:schemaLocation="http://www.springframework.org/schema/integration/amqp http://www.springframework.org/schema/integration/amqp/spring-integration-amqp.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/integration/mongodb http://www.springframework.org/schema/integration/mongodb/spring-integration-mongodb.xsd
+        http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo.xsd">
+
+    <!--<import resource="classpath:/rabbitmq-broker.xml"/>-->
+
+    <int:logging-channel-adapter id="rm-error-logger"   logger-name="RMGeneral" log-full-message="true" level="ERROR"/>
+    <int:logging-channel-adapter id="rm-tracker-logger" logger-name="RMTracker" log-full-message="true" level="INFO"/>
+
+    <int:channel id="RMeventChannel">
+        <int:interceptors>
+            <int:wire-tap channel="rm-tracker-logger"/>
+        </int:interceptors>
+    </int:channel>
+
+    <int-amqp:inbound-gateway request-channel="RMeventChannel"
+                              queue-names="si.test.queue"
+                              amqp-template="amqpTemplate"
+                              error-channel="rm-error-logger"
+                              connection-factory="connectionFactory"/>
+
+    <!--<int:transformer input-channel="RMeventChannel" expression="(payload + '').toUpperCase()"/>-->
+
+    <mongo:db-factory id="mongoDbFactory" dbname="${spring.data.mongodb.database}"
+                                          password="${spring.data.mongodb.password}"
+                                          username="${spring.data.mongodb.username}"
+                                          port="${spring.data.mongodb.port}"
+                                          host="${spring.data.mongodb.host}"/>
+
+
+    <!-- MongoDB adapter, read from chanel and write them into MongoDB -->
+    <int-mongodb:outbound-channel-adapter id="mongoDB"
+                                          channel="RMeventChannel"
+                                          mongo-converter="stringConverter"/>
+
+    <!-- 	mongo-converter="stringConverter" -->
+    <bean id="stringConverter" class="am.profclub.notificationservice.model.StringConverter">
+        <constructor-arg ref="mongoDbFactory"/>
+        <constructor-arg>
+            <bean class="org.springframework.data.mongodb.core.mapping.MongoMappingContext"/>
+        </constructor-arg>
+    </bean>
+
+    <rabbit:connection-factory id="connectionFactory"
+                               host="192.168.99.100"
+                               port="5672"
+                               username="peirabbitmquser"
+                               password="peirabbitmqpswd" />
+
+    <rabbit:admin connection-factory="connectionFactory" />
+
+    <rabbit:template id="amqpTemplate"
+                     connection-factory="connectionFactory"
+                     exchange="si.test.exchange"
+                     routing-key="si.test.binding"
+                     queue="si.test.queue" />
+
+    <rabbit:queue name="si.test.queue" durable="true"/>
+
+    <rabbit:direct-exchange name="si.test.exchange">
+        <rabbit:bindings>
+            <rabbit:binding queue="si.test.queue" key="si.test.binding" />
+        </rabbit:bindings>
+    </rabbit:direct-exchange>
+</beans>

@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ImportResource;
 
 @SpringBootApplication
-@ImportResource("rabbitmq-producer-context.xml")
+@ImportResource({"rabbitmq-producer-context.xml", "from-rabbitmq-to-mongo-context.xml"})
 public class NotificationServiceApplication {
 
 	public static void main(String[] args) {

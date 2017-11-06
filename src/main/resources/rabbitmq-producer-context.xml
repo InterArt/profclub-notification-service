@@ -8,6 +8,7 @@
 		http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit.xsd
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
+   <!-- <import resource="classpath:/rabbitmq-broker.xml"/>-->
 
     <int:logging-channel-adapter id="error-logger"   logger-name="General" log-full-message="true" level="ERROR"/>
     <int:logging-channel-adapter id="tracker-logger" logger-name="Tracker" log-full-message="true" level="INFO"/>
@@ -29,48 +30,38 @@
                  default-request-channel="eventChannel"
                  error-channel="error-logger"/>
 
-   <!-- <int:chain input-channel="eventChannel">
-
-
-        <int:transformer method="serialize">
-            <bean class="am.profclub.notificationservice.common.JsonMessageTransformer"/>
-        </int:transformer>
-
-    </int:chain>-->
-
     <int-amqp:outbound-channel-adapter
-            channel="eventChannel" amqp-template="amqpTemplate" exchange-name="si.test.exchange"
-            routing-key="si.test.binding" />
+            channel="eventChannel"
+            amqp-template="amqpTemplate"
+            exchange-name="si.test.exchange"
+            routing-key="si.test.binding"
+            return-channel="errorChannel"
+    />
 
 
-    <rabbit:connection-factory id="connectionFactory" host="192.168.99.100"
+    <rabbit:connection-factory id="connectionFactory"
+                               host="192.168.99.100"
+                               port="5672"
                                username="peirabbitmquser"
                                password="peirabbitmqpswd" />
 
     <rabbit:admin connection-factory="connectionFactory" />
 
-    <rabbit:queue name="testqueue" />
+    <rabbit:template id="amqpTemplate"
+                     connection-factory="connectionFactory"
+                     exchange="si.test.exchange"
+                     queue="si.test.queue" />
 
-    <rabbit:direct-exchange name="test exchange">
-        <rabbit:bindings>
-            <rabbit:binding queue="testqueue"></rabbit:binding>
-        </rabbit:bindings>
-    </rabbit:direct-exchange>
+    <rabbit:queue name="si.test.queue" durable="true"/>
 
-    <rabbit:template id="amqpTemplate" connection-factory="connectionFactory" exchange="testexchange" queue="testqueue" />
-
-    <rabbit:queue name="si.test.queue" />
-
+    <!--
+    To send AMQP Messages to an Exchange and receive back a response from a remote client,
+    configure an <outbound-gateway>. A 'routing-key' may optionally be provided in addition to the exchange name.
+    -->
     <rabbit:direct-exchange name="si.test.exchange">
         <rabbit:bindings>
             <rabbit:binding queue="si.test.queue" key="si.test.binding" />
         </rabbit:bindings>
     </rabbit:direct-exchange>
-<!--
-    <bean id="transactionManager" class="org.springframework.jms.connection.JmsTransactionManager">
-        <property name="connectionFactory" ref="eventConnectionFactory"/>
-        <property name="nestedTransactionAllowed" value="false"/>
-    </bean>
--->
 
 </beans>
